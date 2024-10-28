@@ -1,15 +1,6 @@
-#ifndef SSD1306_FONT_5x8_H
-#define SSD1306_FONT_5x8_H
+#include "ssd1306_font_5x8.h"
 
-
-#include <stdint.h>
-typedef uint8_t fontData;
-
-namespace SSD1306_Font
-{
-  constexpr uint8_t fontWidth = 5;                  // Font width, padding excluded.
-  constexpr uint8_t fontHeight = 5;                 // Font height, padding included.
-  constexpr fontData CharData[128][5] = {
+fontData CharData[128][5] = {
   // 0 NUL
  {0b00000000, 0b00000000, 0b00000000, 0b00000000, 0b00000000},
   // 1 SOH
@@ -647,6 +638,3 @@ namespace SSD1306_Font
   0b11111111,
   0b11111111}
 };
-};
-
-#endif  // SSD1306_FONT_5x8_H

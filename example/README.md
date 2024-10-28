@@ -1,1 +1,0 @@
-HAL_DMA_files folder contains example HAL DMA lib config. To use DMA related functions of this lib, DMA must be configured in STM32Cube.
