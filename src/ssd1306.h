@@ -18,10 +18,10 @@ uint8_t ssd1306_init(ssd1306_device* dev);
 uint8_t ssd1306_drawPixel(ssd1306_device* dev, uint8_t x, uint8_t y, bool color);
 uint8_t ssd1306_drawPixelToBuff(uint8_t *buffer, uint8_t x, uint8_t y, bool color);
 //void writeChar(unsigned char ch, uint8_t start_x, uint8_t row, const fontData font[][5]);
-//void writeCharToBuff(unsigned char ch, uint8_t start_x, uint8_t row, const fontData font[][5]);
-//void writeStringToBuff(string s, uint8_t start_x, uint8_t row, const fontData font[][5]);
+uint8_t ssd1306_writeCharToBuff(uint8_t *buffer, unsigned char ch, uint8_t start_x, uint8_t row, const fontData font[][5]);
+uint8_t ssd1306_writeStringToBuff(uint8_t *buffer, char* str, uint8_t start_x, uint8_t row, const fontData font[][5]);
 uint8_t ssd1306_updateScreen(ssd1306_device* dev);
-//void updateScreenDMA();
+uint8_t ssd1306_updateScreenDMA(ssd1306_device* dev);
 
 
 uint8_t ssd1306_writeCommand(const struct i2c_dt_spec *dev_i2c, uint8_t command);

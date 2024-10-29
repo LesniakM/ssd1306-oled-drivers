@@ -16,4 +16,6 @@
         status = "okay";
         reg = < 0x3c >;
     };
+
+    clock-frequency = <I2C_BITRATE_STANDARD>;
 };

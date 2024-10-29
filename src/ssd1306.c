@@ -17,7 +17,6 @@ void ssd1306_device_init(ssd1306_device* dev, const struct i2c_dt_spec* i2c_spec
 
   // Init LCD
 uint8_t ssd1306_init(ssd1306_device* dev) {
-  k_msleep(100);
   uint8_t errors = 0;
 
   errors += ssd1306_writeCommand(dev->i2c_spec, 0xA8);   // Set MUX ratio:
@@ -98,31 +97,39 @@ void ssd1306_writeChar(unsigned char ch, uint8_t start_x, uint8_t row, const fon
   
   ssd1306_updateChar(start_x, row, font_width);
 }
+*/
 
-
-void ssd1306_writeCharToBuff(unsigned char ch, uint8_t start_x, uint8_t row, const fontData font[][5])
+uint8_t ssd1306_writeCharToBuff(uint8_t *buffer, unsigned char ch, uint8_t start_x, uint8_t row, const fontData font[][5])
 { 
   uint8_t font_width = 5;
   for (int i = 0; i < font_width; i++) 
   {
-    SSD1306_Buffer[start_x + row * SSD1306_WIDTH + i] = font[ch][i];
+    buffer[start_x + row * SSD1306_WIDTH + i] = font[ch][i];
   }
+  return 0;
 }
 
-void ssd1306_writeStringToBuff(string s, uint8_t start_x, uint8_t row, const fontData font[][5])
+
+uint8_t ssd1306_writeStringToBuff(uint8_t *buffer, char* str, uint8_t start_x, uint8_t row, const fontData font[][5])
 { 
-  uint8_t font_width_with_spaces = 6;
   uint8_t chars_printed = 0;
-  for (char character : s)
-  { 
+  uint8_t font_width_with_spaces = 6;
+  uint8_t length = strlen(str); 
+
+  for (uint8_t i = 0; i < length; i++)
+  {
     if (start_x + chars_printed*font_width_with_spaces < SSD1306_WIDTH)
     {
-      ssd1306_writeCharToBuff(character, start_x + chars_printed*font_width_with_spaces, row, font);
+      ssd1306_writeCharToBuff(buffer, str[i], start_x + chars_printed*font_width_with_spaces, row, font);
       chars_printed++;
     }
+    else {
+      return 1;
+    }
   }
+  return 0;
 }
-*/
+
 
 uint8_t ssd1306_writeCommand(const struct i2c_dt_spec * dev_i2c, uint8_t command)
 {   
@@ -149,9 +156,31 @@ uint8_t ssd1306_writeData(const struct i2c_dt_spec * dev_i2c, uint8_t* data, uin
     return i2c_write_dt(dev_i2c, buf, sizeof(buf));
 }*/
 
-uint8_t ssd1306_writeDataDMA(uint8_t* data, uint16_t data_len)
-{
-    return 99;//HAL_I2C_Mem_Write_DMA(_i2c, _address, 0x40, 1, data, data_len);
+void i2c_transfer_complete_callback(){
+  printk("Transfer CB!\n");
+}
+
+uint8_t ssd1306_writeDataDMA(const struct i2c_dt_spec * dev_i2c, uint8_t* data, uint16_t data_len)
+{ 
+    uint8_t buffer[data_len + 1];
+    buffer[0] = 0x40;                     // First byte is the register address
+    memcpy(&buffer[1], data, data_len);   // Copy the data after the register address
+
+    // Create an I2C message for the burst write
+    struct i2c_msg msg = {
+        .buf = buffer,
+        .len = data_len + 1,
+        .flags = I2C_MSG_WRITE | I2C_MSG_STOP,
+    };
+
+    // Perform the asynchronous I2C transfer with a callback
+    int ret = i2c_transfer_cb_dt(dev_i2c, &msg, 1, i2c_transfer_complete_callback, NULL);
+    if (ret) {
+        printk("Failed to start I2C burst write: %d\n", ret);
+    }
+
+
+  return 99;//HAL_I2C_Mem_Write_DMA(_i2c, _address, 0x40, 1, data, data_len);
 }
 
 // Page is vertical 8 bit chunk of LCD.
@@ -188,13 +217,14 @@ uint8_t ssd1306_updateScreen(ssd1306_device* dev)
   return errors;
 }
 
-/*
-void ssd1306_updateScreenDMA()
+
+uint8_t ssd1306_updateScreenDMA(ssd1306_device* dev)
 {
-    ssd1306_writeCommand(0xB0);       // Set the page start address of the target display location by command (0xB0 to 0xB7).
-    ssd1306_writeCommand(0x00);       // Set the lower start column address of pointer by command (0x00~0x0F).
-    ssd1306_writeCommand(0x10);       // Set the upper start column address of pointer by command (0x10~0x1F).
-    ssd1306_writeDataDMA(&SSD1306_Buffer[0], 512);
-    //_writeDataDMA(&SSD1306_Buffer[0], SSD1306_WIDTH);
+    uint8_t errors = 0;
+  errors += ssd1306_writeCommand(dev->i2c_spec, 0xB0);       // Set the page start address of the target display location by command (0xB0 to 0xB7).
+  errors += ssd1306_writeCommand(dev->i2c_spec, 0x00);       // Set the lower start column address of pointer by command (0x00~0x0F).
+  errors += ssd1306_writeCommand(dev->i2c_spec, 0x10);       // Set the upper start column address of pointer by command (0x10~0x1F).
+  errors += ssd1306_writeDataDMA(dev->i2c_spec, &dev->buffer[0], 512);
+
+  return errors;
 }
-*/
